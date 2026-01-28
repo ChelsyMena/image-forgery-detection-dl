@@ -11,17 +11,16 @@ from sklearn.model_selection import train_test_split
 # --- 0. CONFIGURATION ---
 class CFG:
     # Source paths (adjust these if your raw data is elsewhere)
-    base_path = Path("/Users/chelsymena/recodai-luc-scientific-image-forgery-detection")
-    raw_img_dir = base_path / 'train_images'
-    raw_mask_dir = base_path / 'train_masks'
+    raw_img_dir = Path('./train_images')
+    raw_mask_dir = Path('./train_masks')
     
     # Processed paths
-    root_dir = base_path / "data_patches"
+    root_dir = Path("./data_patches")
     
-    patch_size = 512
+    patch_size = 518
     target_limit = 20000  # Cap for patch scanning
-    batch_size = 8
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    batch_size = 16
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- 1. DATA ORGANIZATION ---
 def organize_data():
@@ -29,14 +28,14 @@ def organize_data():
     print("📂 Organizing data and splitting into Train/Val...")
     for split in ['train', 'val']:
         for cat in ['authentic', 'forged', 'masks']:
-            os.makedirs(CFG.root_dir / split / cat, exist_ok=True)
+            (CFG.root_dir / split / cat).mkdir(parents=True, exist_ok=True)
 
     # Process Authentic
-    auth_files = list(Path(CFG.raw_img_dir).glob('authentic/*'))
+    auth_files = list((CFG.raw_img_dir / 'authentic').glob('*'))
     a_train, a_val = train_test_split(auth_files, test_size=0.2, random_state=42)
     
     # Process Forged
-    forged_files = list(Path(CFG.raw_img_dir).glob('forged/*'))
+    forged_files = list((CFG.raw_img_dir / 'forged').glob('*'))
     f_train, f_val = train_test_split(forged_files, test_size=0.2, random_state=42)
 
     def distribute_files(files, split, is_forged=False):
@@ -160,7 +159,6 @@ def visualize_results(train_meta, target_size):
     plt.savefig("data_preview.png")
     print("📈 Preview saved as 'data_preview.png'")
     plt.show()
-
 
 # --- MAIN EXECUTION ---
 if __name__ == "__main__":
